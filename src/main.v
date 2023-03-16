@@ -13,25 +13,43 @@ fn main() {
 	intents := gateway.all_allowed
 	mut client := vd.new(token: bot_token, intents: intents) or { panic('Could not authenticate') }
 
-	client.on_ready(on_ready)
-	client.on_message_create(on_message)
-	client.on_message_reaction_add(on_reaction)
+	client.on_ready(fn (mut client vd.Client, ready &vd.Ready) {
+		defer {
+			println("Bot ready as '${ready.user.username}#${ready.user.discriminator}'.")
+		}
+
+		data := CallbackData{
+			client: client
+			client_user: ready.user
+		}
+
+		// There is probably a cleaner way..? But we do want access to the client's user
+		client.on_message_create(fn [data] (mut client vd.Client, message &vd.MessageCreate) {
+			on_message(data, message)
+		})
+
+		client.on_message_reaction_add(fn [data] (mut client vd.Client, reaction &vd.MessageReactionAdd) {
+			on_reaction(data, reaction)
+		})
+	})
 
 	println('Bot online...')
 	client.run().wait()
 }
 
-fn on_ready(mut client vd.Client, ready &vd.Ready) {
-	println("Bot ready as '${ready.user.username}#${ready.user.discriminator}'.")
-}
-
-fn on_message(mut client vd.Client, message &vd.MessageCreate) {
+fn on_message(data CallbackData, message &vd.MessageCreate) {
 	if message.author.bot {
 		return
 	}
+
+	println(message.mentions)
+
+	if data.client_user.id in message.mentions.map(it.id) {
+		println('Mention detected')
+	}
 }
 
-fn on_reaction(mut client vd.Client, reaction &vd.MessageReactionAdd) {
+fn on_reaction(data CallbackData, reaction &vd.MessageReactionAdd) {
 	if reaction.member.user.bot {
 		return
 	}
