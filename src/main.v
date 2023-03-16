@@ -32,14 +32,14 @@ fn main() {
 		client.on_message_create(fn [mut data] (mut client vd.Client, message &vd.MessageCreate) {
 			on_message(mut data, message) or {
 				print_backtrace()
-				println('Error: Could not handle message:\n$message')
+				println('Error: Could not handle message:\n${message}')
 			}
 		})
 
 		client.on_message_reaction_add(fn [mut data] (mut client vd.Client, reaction &vd.MessageReactionAdd) {
 			on_reaction(mut data, reaction) or {
 				print_backtrace()
-				println('Error: Could not handle reaction:\n$reaction')
+				println('Error: Could not handle reaction:\n${reaction}')
 			}
 		})
 	})
@@ -57,7 +57,7 @@ fn on_message(mut data CallbackData, message &vd.MessageCreate) ! {
 
 	if data.client_user.id in mentioned_ids {
 		println('Mentioned by ${message.author.username}#${message.author.discriminator}.')
-		msg := '<@$message.author.id> you dare mention me, mortal?'
+		msg := '<@${message.author.id}> you dare mention me, mortal?'
 		data.client.channel_message_send(message.channel_id, content: msg)!
 	}
 }
