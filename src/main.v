@@ -18,18 +18,15 @@ fn main() {
 			println("Bot ready as '${ready.user.username}#${ready.user.discriminator}'.")
 		}
 
-		data := CallbackData{
-			client: client
-			client_user: ready.user
-		}
+		client_user := ready.user
 
 		// There is probably a cleaner way..? But we do want access to the client's user
-		client.on_message_create(fn [data] (mut client vd.Client, message &vd.MessageCreate) {
-			on_message(data, message)
+		client.on_message_create(fn [client_user] (mut client vd.Client, message &vd.MessageCreate) {
+			on_message(client_user, mut client, message)
 		})
 
-		client.on_message_reaction_add(fn [data] (mut client vd.Client, reaction &vd.MessageReactionAdd) {
-			on_reaction(data, reaction)
+		client.on_message_reaction_add(fn [client_user] (mut client vd.Client, reaction &vd.MessageReactionAdd) {
+			on_reaction(client_user, mut client, reaction)
 		})
 	})
 
@@ -37,19 +34,20 @@ fn main() {
 	client.run().wait()
 }
 
-fn on_message(data CallbackData, message &vd.MessageCreate) {
+fn on_message(client_user vd.User, mut client vd.Client, message &vd.MessageCreate) {
 	if message.author.bot {
 		return
 	}
 
-	println(message.mentions)
+	mentioned_ids := message.mentions.map(it.id)
 
-	if data.client_user.id in message.mentions.map(it.id) {
+	if client_user.id in mentioned_ids {
 		println('Mention detected')
+		client.channel_message_send(message.channel_id, content: 'Mention detected') or { return }
 	}
 }
 
-fn on_reaction(data CallbackData, reaction &vd.MessageReactionAdd) {
+fn on_reaction(client_user vd.User, mut client vd.Client, reaction &vd.MessageReactionAdd) {
 	if reaction.member.user.bot {
 		return
 	}
