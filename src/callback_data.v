@@ -1,3 +1,5 @@
+module main
+
 import discordv as vd
 
 struct CallbackData {
