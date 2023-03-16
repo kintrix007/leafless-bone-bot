@@ -3,11 +3,23 @@ name: CI
 on: [push, pull_request]
 
 jobs:
+  check-formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup V
+        uses: vlang/setup-v@v1.3
+    
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Verify v fmt
+        run: |
+          v fmt -verify .
+
   compile:
     strategy:
-      # fail-fast: true
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04]
+        os: [ubuntu-20.04, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -15,9 +27,6 @@ jobs:
 
       - name: Setup V
         uses: vlang/setup-v@v1.3
-        with:
-          check-latest: true
-          stable: true
 
       - name: Install Discord.v fork
         run: v install --git https://github.com/kintrix007/discordv.git
