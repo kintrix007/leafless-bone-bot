@@ -20,9 +20,14 @@ fn main() {
 
 		client_user := ready.user
 
+		mut data := CallbackData{
+			client_user: client_user
+			client: client
+		}
+
 		// There is probably a cleaner way..? But we do want access to the client's user
-		client.on_message_create(fn [client_user] (mut client vd.Client, message &vd.MessageCreate) {
-			on_message(client_user, mut client, message)
+		client.on_message_create(fn [mut data] (mut client vd.Client, message &vd.MessageCreate) {
+			on_message(mut data, mut client, message)
 		})
 
 		client.on_message_reaction_add(fn [client_user] (mut client vd.Client, reaction &vd.MessageReactionAdd) {
@@ -34,14 +39,14 @@ fn main() {
 	client.run().wait()
 }
 
-fn on_message(client_user vd.User, mut client vd.Client, message &vd.MessageCreate) {
+fn on_message(mut data CallbackData, mut client vd.Client, message &vd.MessageCreate) {
 	if message.author.bot {
 		return
 	}
 
 	mentioned_ids := message.mentions.map(it.id)
 
-	if client_user.id in mentioned_ids {
+	if data.client_user.id in mentioned_ids {
 		println('Mention detected')
 		client.channel_message_send(message.channel_id, content: 'Mention detected') or { return }
 	}
