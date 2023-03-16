@@ -20,18 +20,27 @@ fn main() {
 
 		client_user := ready.user
 
-		mut data := CallbackData{
+		// ? I have no clue why, but this HAS to be a heap struct
+		mut data := &CallbackData{
 			client_user: client_user
-			client: client
+			client: client // Implicitly mutable..?
+			// Same as
+			// client: mut client
 		}
 
-		// There is probably a cleaner way..? But we do want access to the client's user
+		// There is probably a cleaner way..? But we _do_ want access to the client's user
 		client.on_message_create(fn [mut data] (mut client vd.Client, message &vd.MessageCreate) {
-			on_message(mut data, mut client, message)
+			on_message(mut data, message) or {
+				print_backtrace()
+				println('Error: Could not handle message:\n$message')
+			}
 		})
 
-		client.on_message_reaction_add(fn [client_user] (mut client vd.Client, reaction &vd.MessageReactionAdd) {
-			on_reaction(client_user, mut client, reaction)
+		client.on_message_reaction_add(fn [mut data] (mut client vd.Client, reaction &vd.MessageReactionAdd) {
+			on_reaction(mut data, reaction) or {
+				print_backtrace()
+				println('Error: Could not handle reaction:\n$reaction')
+			}
 		})
 	})
 
@@ -39,7 +48,7 @@ fn main() {
 	client.run().wait()
 }
 
-fn on_message(mut data CallbackData, mut client vd.Client, message &vd.MessageCreate) {
+fn on_message(mut data CallbackData, message &vd.MessageCreate) ! {
 	if message.author.bot {
 		return
 	}
@@ -47,12 +56,13 @@ fn on_message(mut data CallbackData, mut client vd.Client, message &vd.MessageCr
 	mentioned_ids := message.mentions.map(it.id)
 
 	if data.client_user.id in mentioned_ids {
-		println('Mention detected')
-		client.channel_message_send(message.channel_id, content: 'Mention detected') or { return }
+		println('Mentioned by ${message.author.username}#${message.author.discriminator}.')
+		msg := '<@$message.author.id> you dare mention me, mortal?'
+		data.client.channel_message_send(message.channel_id, content: msg)!
 	}
 }
 
-fn on_reaction(client_user vd.User, mut client vd.Client, reaction &vd.MessageReactionAdd) {
+fn on_reaction(mut data CallbackData, reaction &vd.MessageReactionAdd) ! {
 	if reaction.member.user.bot {
 		return
 	}
